@@ -1,29 +1,39 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const cookieSession = require('cookie-session');
 const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
+
+require('./models/Users');
+require('./services/passport');
+
 const keys = require('./config/keys');
+
+// const options = {
+//     reconnectTries: Number.MAX_VALUE,
+//     reconnectInterval: 600,
+//     autoReconnect: true
+// };
+
+mongoose
+    .connect(keys.mongoURI)
+    .then(() => {
+        console.log('Connected to mongo instance');
+    })
+    .catch(e => console.log('Error while connecting to Mongo: ', e));
 
 const app = express();
 
-passport.use(
-    new GoogleStrategy(
-        {
-            clientID: keys.googleClientID,
-            clientSecret: keys.googleClientSecret,
-            callbackURL: '/auth/google/callback'
-        },
-        accessToken => {
-            console.log(accessToken);
-        }
-    )
+app.use(
+    cookieSession({
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        keys: [keys.cookieKey, keys.cookieBackupKey]
+    })
 );
 
-//https://accounts.google.com/o/oauth2/v2/auth?response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A5000%2Fauth%2Fgoogle%2Fcallback&scope=profile%20email&client_id=381928868316-e6ft5bu9jeq3orb4462g0c2atmcinn5h.apps.googleusercontent.com
+app.use(passport.initialize());
+app.use(passport.session());
 
-app.get(
-    '/auth/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+require('./routes/authRoutes')(app);
 
 const port = process.env.PORT || 5000;
 

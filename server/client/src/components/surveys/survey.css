@@ -1,0 +1,9 @@
+.Survey {
+    color: brown;
+}
+
+@media (max-width: 600px) {
+    .Survey {
+        color: purple;
+    }
+}
